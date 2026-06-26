@@ -1,6 +1,6 @@
 """
 Oxygen Sports — Database Models
-Tables: Generation, Feedback
+Tables: User, Generation, Feedback
 """
 
 from flask_sqlalchemy import SQLAlchemy
@@ -9,28 +9,42 @@ from datetime import datetime
 db = SQLAlchemy()
 
 
+class User(db.Model):
+    """Stores registered users."""
+    __tablename__ = "users"
+
+    id            = db.Column(db.Integer,     primary_key=True)
+    name          = db.Column(db.String(120), nullable=False)
+    email         = db.Column(db.String(200), nullable=False, unique=True)
+    password_hash = db.Column(db.String(256), nullable=False)
+    created_at    = db.Column(db.DateTime,    default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id":         self.id,
+            "name":       self.name,
+            "email":      self.email,
+            "created_at": self.created_at.isoformat(),
+        }
+
+
 class Generation(db.Model):
-    """
-    Stores every checklist generation request + AI response.
-    """
+    """Stores every checklist generation request + AI response."""
     __tablename__ = "generations"
 
-    id           = db.Column(db.Integer,  primary_key=True)
+    id           = db.Column(db.Integer,     primary_key=True)
     player       = db.Column(db.String(120), nullable=False)
     sport        = db.Column(db.String(80),  nullable=False)
     format       = db.Column(db.String(80),  nullable=False)
     level        = db.Column(db.String(80),  nullable=False)
     notes        = db.Column(db.Text,        nullable=True)
-
-    # The full AI-generated checklist stored as JSON string
     checklist    = db.Column(db.Text,        nullable=False)
-
-    # Which AI provider was used: "openai" | "gemini"
     ai_provider  = db.Column(db.String(20),  nullable=False)
-
+    user_uid     = db.Column(db.String(120), nullable=True)
+    user_email   = db.Column(db.String(200), nullable=True)
     created_at   = db.Column(db.DateTime,    default=datetime.utcnow)
+    updated_at   = db.Column(db.DateTime,    default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationship to feedback
     feedback     = db.relationship("Feedback", backref="generation", uselist=False)
 
     def to_dict(self):
@@ -44,23 +58,24 @@ class Generation(db.Model):
             "notes":       self.notes,
             "checklist":   json.loads(self.checklist),
             "ai_provider": self.ai_provider,
+            "user_uid":    self.user_uid,
+            "user_email":  self.user_email,
             "created_at":  self.created_at.isoformat(),
-            "rating":      self.feedback.rating if self.feedback else None,
+            "updated_at":  self.updated_at.isoformat() if self.updated_at else None,
+            "rating":      self.feedback.rating  if self.feedback else None,
             "comment":     self.feedback.comment if self.feedback else None,
         }
 
 
 class Feedback(db.Model):
-    """
-    Stores player rating and optional comment for a generation.
-    """
+    """Stores player rating and optional comment for a generation."""
     __tablename__ = "feedbacks"
 
-    id              = db.Column(db.Integer, primary_key=True)
-    generation_id   = db.Column(db.Integer, db.ForeignKey("generations.id"), nullable=False, unique=True)
-    rating          = db.Column(db.Integer, nullable=False)   # 1–5
-    comment         = db.Column(db.Text,    nullable=True)
-    created_at      = db.Column(db.DateTime, default=datetime.utcnow)
+    id            = db.Column(db.Integer, primary_key=True)
+    generation_id = db.Column(db.Integer, db.ForeignKey("generations.id"), nullable=False, unique=True)
+    rating        = db.Column(db.Integer, nullable=False)
+    comment       = db.Column(db.Text,    nullable=True)
+    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
         return {

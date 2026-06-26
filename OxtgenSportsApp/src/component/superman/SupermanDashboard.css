@@ -1,0 +1,175 @@
+/* src/component/superman/SupermanDashboard.css */
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap');
+
+.superman-page {
+  font-family: 'Barlow', sans-serif;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  background: #0A0D12;
+  min-height: 100vh;
+  color: #F0F4FF;
+}
+
+/* Header */
+.superman-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.25rem; flex-wrap: wrap; gap: 12px;
+}
+.superman-header__left { display: flex; align-items: center; gap: 14px; }
+.superman-logo {
+  width: 48px; height: 48px; border-radius: 14px;
+  background: linear-gradient(135deg, #A78BFA, #7C3AED);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 24px #A78BFA40;
+}
+.superman-logo i { font-size: 24px; color: #fff; }
+.superman-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 24px; font-weight: 700; color: #F0F4FF; margin: 0;
+}
+.superman-sub { font-size: 12px; color: #A78BFA; margin: 2px 0 0; letter-spacing: 0.5px; }
+.superman-header__right { display: flex; gap: 8px; }
+
+/* Buttons */
+.superman-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: 'Barlow', sans-serif; transition: all 0.2s;
+}
+.superman-btn--ghost {
+  border: 1px solid #ffffff18; background: #111520; color: #8A94A8;
+}
+.superman-btn--ghost:hover { color: #F0F4FF; background: #161B26; }
+.superman-btn--danger {
+  border: none; background: #FF5A5A18; color: #FF5A5A;
+  border: 1px solid #FF5A5A30;
+}
+.superman-btn--danger:hover { background: #FF5A5A30; }
+
+/* Role bar */
+.superman-role-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: #111520; border: 1px solid #ffffff10;
+  border-radius: 12px; padding: 12px 16px; margin-bottom: 1.5rem;
+}
+
+/* Role badges */
+.role-badge {
+  font-size: 11px; font-weight: 700; padding: 3px 10px;
+  border-radius: 20px; letter-spacing: 0.5px;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.role-badge--superman { background: #A78BFA18; color: #A78BFA; border: 1px solid #A78BFA30; }
+.role-badge--admin    { background: #FF9F4318; color: #FF9F43; border: 1px solid #FF9F4330; }
+.role-badge--player   { background: #00E5A018; color: #00E5A0; border: 1px solid #00E5A030; }
+
+/* Tabs */
+.superman-tabs {
+  display: flex; gap: 4px; background: #111520;
+  border: 1px solid #ffffff10; border-radius: 12px;
+  padding: 4px; margin-bottom: 1.5rem;
+}
+.superman-tab {
+  flex: 1; padding: 10px; border: none; border-radius: 9px;
+  background: transparent; color: #8A94A8; font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: 'Barlow', sans-serif;
+  transition: all 0.2s; display: flex; align-items: center;
+  justify-content: center; gap: 7px;
+}
+.superman-tab--active {
+  background: #A78BFA18; color: #A78BFA; border: 1px solid #A78BFA30;
+}
+.superman-tab:hover:not(.superman-tab--active) { color: #F0F4FF; background: #161B26; }
+
+/* Loading */
+.superman-loading {
+  display: flex; align-items: center; gap: 10px;
+  color: #8A94A8; font-size: 14px; padding: 3rem;
+  justify-content: center;
+}
+
+/* Stats */
+.superman-stats {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 12px; margin-bottom: 1.25rem;
+}
+.superman-stat {
+  background: #111520; border: 1px solid #ffffff10;
+  border-radius: 12px; padding: 1.25rem;
+  display: flex; align-items: center; gap: 14px;
+}
+.superman-stat__icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.superman-stat__icon i { font-size: 20px; }
+.superman-stat__val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 24px; font-weight: 700; color: #F0F4FF; margin: 0;
+}
+.superman-stat__label { font-size: 11px; color: #8A94A8; margin: 2px 0 0; }
+
+/* Cards */
+.superman-card {
+  background: #111520; border: 1px solid #ffffff10;
+  border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem;
+}
+.superman-card__title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px; font-weight: 700; color: #F0F4FF;
+  margin: 0 0 1.25rem; display: flex; align-items: center; gap: 8px;
+}
+.superman-card__title i { color: #A78BFA; }
+
+/* Bar chart */
+.superman-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.superman-bar-label { font-size: 12px; color: #8A94A8; min-width: 100px; text-align: right; }
+.superman-bar-track { flex: 1; height: 8px; background: #1A2030; border-radius: 4px; overflow: hidden; }
+.superman-bar-fill { height: 100%; background: linear-gradient(90deg,#A78BFA,#7C3AED); border-radius: 4px; transition: width 0.6s ease; }
+.superman-bar-fill--orange { background: linear-gradient(90deg,#FF9F43,#e88c30); }
+.superman-bar-count { font-size: 12px; color: #8A94A8; min-width: 24px; }
+
+/* Table */
+.superman-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.superman-table th {
+  text-align: left; font-size: 11px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: #3A4558; padding: 8px 12px;
+  border-bottom: 1px solid #ffffff08;
+}
+.superman-table td {
+  padding: 11px 12px; color: #8A94A8;
+  border-bottom: 1px solid #ffffff06;
+}
+.superman-table tr:hover td { color: #F0F4FF; background: #161B26; }
+.superman-table tr:last-child td { border-bottom: none; }
+
+/* Note & Link */
+.superman-note {
+  font-size: 13px; color: #8A94A8; margin-bottom: 1.25rem;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.superman-link {
+  color: #A78BFA; text-decoration: none; font-weight: 600;
+}
+.superman-link:hover { text-decoration: underline; }
+
+.superman-roles-info h4 {
+  font-size: 13px; font-weight: 600; color: #F0F4FF; margin: 0 0 12px;
+}
+
+/* Spin */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.8s linear infinite; display: inline-block; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .superman-stats { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .superman-stats { grid-template-columns: 1fr; }
+}

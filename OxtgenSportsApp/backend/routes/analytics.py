@@ -67,6 +67,16 @@ def get_analytics():
     )
     by_ai_provider = [{"provider": row.ai_provider, "count": row.count} for row in provider_rows]
 
+    # ── Breakdown by user email ──
+    user_rows = (
+        db.session.query(Generation.user_email, func.count(Generation.id).label("count"))
+        .group_by(Generation.user_email)
+        .order_by(func.count(Generation.id).desc())
+        .limit(10)
+        .all()
+    )
+    by_user = [{"user_email": row.user_email or "Unknown", "count": row.count} for row in user_rows]
+
     # ── Rating distribution (1–5) ──
     rating_rows = (
         db.session.query(Feedback.rating, func.count(Feedback.id).label("count"))
@@ -95,6 +105,7 @@ def get_analytics():
             "by_sport":            by_sport,
             "by_level":            by_level,
             "by_ai_provider":      by_ai_provider,
+            "by_user":             by_user,
             "rating_distribution": rating_distribution,
             "recent_generations":  recent_generations,
         }

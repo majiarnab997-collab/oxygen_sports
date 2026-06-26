@@ -66,6 +66,9 @@ def generate():
             "error":   f"AI generation failed: {str(e)}"
         }), 500
 
+    user_uid   = data.get("user_uid")
+    user_email = data.get("user_email")
+
     # ── Save to database ──
     generation = Generation(
         player      = player,
@@ -75,6 +78,8 @@ def generate():
         notes       = notes,
         checklist   = json.dumps(checklist),
         ai_provider = provider,
+        user_uid    = user_uid,
+        user_email  = user_email,
     )
     db.session.add(generation)
     db.session.commit()
