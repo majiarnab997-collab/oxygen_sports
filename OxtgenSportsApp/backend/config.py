@@ -32,3 +32,6 @@ class Config:
         ALLOWED_ORIGINS = ["*"]
     else:
         ALLOWED_ORIGINS = [origin.strip() for origin in _origins.split(",") if origin.strip()]
+
+    # ── Admin secret used for backend admin API access (default matches frontend dev constant)
+    ADMIN_SECRET = os.getenv("ADMIN_SECRET", "OXYGEN2024")

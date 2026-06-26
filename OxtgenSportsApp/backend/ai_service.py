@@ -8,14 +8,23 @@ import re
 import openai
 import google.generativeai as genai
 from config import Config
+from database import Config as ConfigModel
 
 
 # ── Prompt Builder ────────────────────────────────────────────────────────────
 
 def build_prompt(player: str, sport: str, format: str, level: str, notes: str) -> str:
     notes_text = notes.strip() if notes and notes.strip() else "None"
+    custom_prompt = ""
 
-    prompt = f"""You are an elite sports performance coach working with Oxygen Sports.
+    try:
+        cfg = ConfigModel.query.filter_by(key="admin_prompt").first()
+        if cfg and cfg.value:
+            custom_prompt = cfg.value.strip()
+    except Exception:
+        custom_prompt = ""
+
+    base_prompt = f"""You are an elite sports performance coach working with Oxygen Sports.
 
 Generate a pre-match preparation checklist for this athlete.
 
@@ -37,7 +46,10 @@ Example:
   "mental":    ["item1", "item2", "item3", "item4", "item5"]
 }}"""
 
-    return prompt
+    if custom_prompt:
+        return f"{custom_prompt}\n\n{base_prompt}"
+
+    return base_prompt
 
 
 # ── Response Parser ───────────────────────────────────────────────────────────

@@ -34,6 +34,8 @@ def create_app():
     app.register_blueprint(history_bp,   url_prefix="/api")
     app.register_blueprint(analytics_bp, url_prefix="/api")
     app.register_blueprint(auth_bp,      url_prefix="/api")
+    from routes.config import config_bp
+    app.register_blueprint(config_bp,    url_prefix="/api")
 
     with app.app_context():
         db.create_all()

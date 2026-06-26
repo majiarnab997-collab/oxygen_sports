@@ -85,3 +85,21 @@ class Feedback(db.Model):
             "comment":       self.comment,
             "created_at":    self.created_at.isoformat(),
         }
+
+
+class Config(db.Model):
+    """Key/value store for runtime configuration (admin prompt, admin code, etc.)."""
+    __tablename__ = "configs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(120), nullable=False, unique=True)
+    value = db.Column(db.Text, nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "key": self.key,
+            "value": self.value,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
