@@ -17,7 +17,15 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    CORS(app, resources={r"/api/*": {"origins": Config.ALLOWED_ORIGINS}})
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": [
+                "https://oxygensports.netlify.app", 
+                "http://localhost:5173"
+            ],
+            "supports_credentials": True
+        }
+    })
 
     db.init_app(app)
 

@@ -52,6 +52,7 @@ function getRole(email, isAdminRegistered) {
 }
 
 const db = getFirestore(firebaseApp);
+let adminRolePending = false;
 
 async function createOrUpdateUserRecord(user, role = "player") {
   if (!user?.uid) return { success: false, error: "missing_user" };
@@ -71,6 +72,11 @@ async function createOrUpdateUserRecord(user, role = "player") {
     if (snapshot.exists()) {
       const existing = snapshot.data();
       if (existing.role && existing.role !== role) {
+        if (existing.role === "player" && role === "admin") {
+          // Upgrade an existing player to admin when admin flow is explicitly selected.
+          await setDoc(userRef, { ...existing, ...payload, role, isAdmin: true }, { merge: true });
+          return { success: true, role };
+        }
         return { success: false, conflictRole: existing.role };
       }
       await setDoc(userRef, { ...existing, ...payload, role, isAdmin: role === "admin" }, { merge: true });
@@ -246,7 +252,9 @@ function LoginPage({ roleIntent, onBack }) {
 
     setLoading(true);
     try {
-      if (mode === "signup") {
+      const willUseAdminRole = isAdminFlow && mode === "signup";
+    if (willUseAdminRole) adminRolePending = true;
+    if (mode === "signup") {
         const c = await createUserWithEmailAndPassword(auth, form.email, form.password);
         await updateProfile(c.user, { displayName: form.name });
         await sendEmailVerification(c.user);
@@ -262,12 +270,27 @@ function LoginPage({ roleIntent, onBack }) {
       console.error("Signup error:", err);
       setError(errMsg(err.code, err.message));
     } finally {
+      adminRolePending = false;
       setLoading(false);
     }
   }
 
   async function handleSocialLogin(provider) {
     setError("");
+    const willUseAdminRole = isAdminFlow && mode === "signup";
+    if (willUseAdminRole) adminRolePending = true;
+    if (isAdminFlow && mode === "signup") {
+      if (!form.adminCode.trim()) {
+        setError("Enter the admin registration code before continuing as admin.");
+        adminRolePending = false;
+        return;
+      }
+      if (form.adminCode.trim() !== ADMIN_SECRET_CODE) {
+        setError("Invalid admin registration code. Contact your supervisor.");
+        adminRolePending = false;
+        return;
+      }
+    }
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, provider);
@@ -277,6 +300,15 @@ function LoginPage({ roleIntent, onBack }) {
       } else {
         const desiredRole = isAdminFlow ? "admin" : "player";
         const update = await createOrUpdateUserRecord(result.user, desiredRole);
+
+        if (update.success) {
+          if (isAdminFlow) {
+            localStorage.setItem(`admin_${result.user.uid}`, "true");
+          } else {
+            localStorage.removeItem(`admin_${result.user.uid}`);
+          }
+        }
+
         if (!update.success) {
           await signOut(auth);
           if (update.conflictRole === "admin") {
@@ -292,6 +324,7 @@ function LoginPage({ roleIntent, onBack }) {
       console.error("Social login error:", err);
       setError(errMsg(err.code, err.message));
     } finally {
+      adminRolePending = false;
       setLoading(false);
     }
   }
@@ -357,7 +390,7 @@ function LoginPage({ roleIntent, onBack }) {
             {mode==="login"
               ? `Sign in to your ${isAdminFlow?"admin":"player"} account.`
               : isAdminFlow
-                ? "Register here and verify your email before signing in. Admin accounts also require the registration code."
+                ? "Register an admin account with the supervisor code, verify your email, then sign in."
                 : "Register here and verify your email before signing in. You can also continue with Google or GitHub."}
           </p>
           <form onSubmit={handleSubmit} style={{display:"flex",flexDirection:"column",gap:14}}>            {mode==="signup" && (              <div style={{display:"flex",flexDirection:"column",gap:7}}>                <label style={{fontSize:11,fontWeight:600,letterSpacing:.8,textTransform:"uppercase",color:"#8A94A8"}}>Full name</label>                <div style={{position:"relative"}}>                  <i className="ti ti-user" style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"#3A4558",pointerEvents:"none"}} />                  <input type="text" placeholder="Your name" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} />                </div>              </div>            )}            <div style={{display:"flex",flexDirection:"column",gap:7}}>              <label style={{fontSize:11,fontWeight:600,letterSpacing:.8,textTransform:"uppercase",color:"#8A94A8"}}>Email address</label>              <div style={{position:"relative"}}>                <i className="ti ti-mail" style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"#3A4558",pointerEvents:"none"}} />                <input type="email" placeholder="you@example.com" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} />              </div>            </div>            <div style={{display:"flex",flexDirection:"column",gap:7}}>              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>                <label style={{fontSize:11,fontWeight:600,letterSpacing:.8,textTransform:"uppercase",color:"#8A94A8"}}>Password</label>                {mode==="login" && <button type="button" onClick={()=>setError("Contact your supervisor to reset password.")} style={{background:"none",border:"none",color:accentColor,fontSize:12,cursor:"pointer",fontFamily:"Barlow,sans-serif"}}>Forgot password?</button>}              </div>              <div style={{position:"relative"}}>                <i className="ti ti-lock" style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"#3A4558",pointerEvents:"none"}} />                <input type={show?"text":"password"} placeholder={mode==="signup"?"Min. 6 characters":"Enter your password"} value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} style={{paddingRight:42}} />                <button type="button" onClick={()=>setShow(s=>!s)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#3A4558",cursor:"pointer",fontSize:16}}>                  <i className={`ti ${show?"ti-eye-off":"ti-eye"}`} />                </button>              </div>            </div>            {/* Admin code field — only on admin signup */}
@@ -518,10 +551,14 @@ export default function App() {
           try {
             const userRef = doc(db, "users", u.uid);
             const snapshot = await getDoc(userRef);
-            let role = getRole(u.email, localStorage.getItem(`admin_${u.uid}`) === "true");
+            let role = getRole(u.email, localStorage.getItem(`admin_${u.uid}`) === "true" || adminRolePending);
             if (snapshot.exists()) {
               const data = snapshot.data();
-              role = data.role || role;
+              const shouldBeAdmin = data.role === "admin" || role === "admin";
+              if (data.role !== "admin" && shouldBeAdmin) {
+                await setDoc(userRef, { ...data, role: "admin", isAdmin: true, updatedAt: serverTimestamp() }, { merge: true });
+              }
+              role = shouldBeAdmin ? "admin" : (data.role || role);
             } else {
               await setDoc(userRef, {
                 uid: u.uid,
