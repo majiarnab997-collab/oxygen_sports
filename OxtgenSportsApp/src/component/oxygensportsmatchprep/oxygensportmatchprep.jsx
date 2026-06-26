@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import './oxygensportmatchprep.css';
-
-const API = "http://127.0.0.1:5000/api";
+import API from '../../config/api';
 
 const SPORT_OPTIONS = ["Cricket","Football","Badminton","Tennis","Basketball","Swimming","Athletics","Boxing","Volleyball","Hockey"];
 const FORMAT_OPTIONS = {
@@ -211,9 +210,10 @@ const MatchPreparation = ({ user, onLogout, onAnalytics }) => {
 
     try {
       let data;
+      let response;
 
       if (entryToSave.id) {
-        const response = await fetch(`${API}/history/${entryToSave.id}`, {
+        response = await fetch(`${API}/history/${entryToSave.id}`, {
           method: "PUT",
           headers: {"Content-Type":"application/json"},
           body: JSON.stringify({
@@ -226,35 +226,37 @@ const MatchPreparation = ({ user, onLogout, onAnalytics }) => {
             notes: currentEntry.notes,
           }),
         });
-        data = await response.json();
       } else {
-        const response = await fetch(`${API}/history`, {
+        response = await fetch(`${API}/history`, {
           method: "POST",
           headers: {"Content-Type":"application/json"},
           body: JSON.stringify({
-            player:     currentEntry.player,
-            sport:      currentEntry.sport,
-            format:     currentEntry.format,
-            level:      currentEntry.level,
-            notes:      currentEntry.notes,
+            player:      currentEntry.player,
+            sport:       currentEntry.sport,
+            format:      currentEntry.format,
+            level:       currentEntry.level,
+            notes:       currentEntry.notes,
             checklist, 
             ai_provider: currentEntry.ai_provider || "manual",
             rating,
-            user_uid:   user?.uid,
-            user_email: user?.email,
+            user_uid:    user?.uid,
+            user_email:  user?.email,
           }),
         });
-        data = await response.json();
       }
 
-      if (data.success && data.generation) {
-        setHistory((prev) => [data.generation, ...prev.filter((entry) => entry.id !== data.generation.id)]);
-        setCurrentEntry((prev) => ({...prev, generation_id: data.generation.id}));
-        notify("Your checklist has been saved successfully.", "success");
-      } else {
+      data = await response.json();
+
+      if (!response.ok || !data.success || !data.generation) {
+        const errorMessage = data.error || data.message || response.statusText || "Unknown save error.";
         setHistory((prev) => [entryToSave, ...prev.filter((entry) => entry.id !== entryToSave.id)]);
-        notify("Saved locally. Backend response was not valid.", "warning");
+        notify(`Save failed: ${errorMessage}`, "error");
+        return;
       }
+
+      setHistory((prev) => [data.generation, ...prev.filter((entry) => entry.id !== data.generation.id)]);
+      setCurrentEntry((prev) => ({...prev, generation_id: data.generation.id}));
+      notify("Your checklist has been saved successfully.", "success");
     } catch (error) {
       console.error("Failed to save backend history:", error);
       notify("Save failed. Check console or network.", "error");

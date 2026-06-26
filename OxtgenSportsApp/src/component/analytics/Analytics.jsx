@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import "./Analytics.css";
-
-const API = "http://127.0.0.1:5000/api";
+import API from "../../config/api";
 
 function StatCard({ icon, label, value, color }) {
   return (

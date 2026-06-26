@@ -27,4 +27,8 @@ class Config:
     GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
     # ── CORS ──────────────────────────────────────────────
-    ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    _origins = os.getenv("ALLOWED_ORIGINS", "*").strip()
+    if not _origins or _origins == "*":
+        ALLOWED_ORIGINS = ["*"]
+    else:
+        ALLOWED_ORIGINS = [origin.strip() for origin in _origins.split(",") if origin.strip()]

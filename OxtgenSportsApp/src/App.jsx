@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore";
 import MatchPreparation from "./component/oxygensportsmatchprep/oxygensportmatchprep";
 import SupermanDashboard from "./component/superman/SupermanDashboard";
+import API from "./config/api";
 import "./App.css";
 
 /* ─── Firebase Setup ─────────────────────────────────────── */
@@ -36,6 +37,7 @@ const firebaseConfig = {
 const firebaseApp    = initializeApp(firebaseConfig);
 const auth           = getAuth(firebaseApp);
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
 const githubProvider = new GithubAuthProvider();
 
 /* ─── Admin Registration Code ────────────────────────────── */
@@ -52,7 +54,7 @@ function getRole(email, isAdminRegistered) {
 const db = getFirestore(firebaseApp);
 
 async function createOrUpdateUserRecord(user, role = "player") {
-  if (!user?.uid) return;
+  if (!user?.uid) return { success: false, error: "missing_user" };
   try {
     const userRef = doc(db, "users", user.uid);
     const snapshot = await getDoc(userRef);
@@ -68,13 +70,17 @@ async function createOrUpdateUserRecord(user, role = "player") {
     };
     if (snapshot.exists()) {
       const existing = snapshot.data();
-      const finalRole = existing.role === "admin" ? "admin" : role;
-      await setDoc(userRef, { ...existing, ...payload, role: finalRole, isAdmin: finalRole === "admin" }, { merge: true });
-    } else {
-      await setDoc(userRef, { ...payload, createdAt: serverTimestamp() });
+      if (existing.role && existing.role !== role) {
+        return { success: false, conflictRole: existing.role };
+      }
+      await setDoc(userRef, { ...existing, ...payload, role, isAdmin: role === "admin" }, { merge: true });
+      return { success: true, role };
     }
+    await setDoc(userRef, { ...payload, createdAt: serverTimestamp() });
+    return { success: true, role };
   } catch (error) {
     console.error("Failed to write user record:", error);
+    return { success: false, error: error.message || "unknown_error" };
   }
 }
 
@@ -269,7 +275,18 @@ function LoginPage({ roleIntent, onBack }) {
         await signOut(auth);
         setError("Email is not verified. Please verify your account before signing in.");
       } else {
-        await createOrUpdateUserRecord(result.user, isAdminFlow ? "player" : "player");
+        const desiredRole = isAdminFlow ? "admin" : "player";
+        const update = await createOrUpdateUserRecord(result.user, desiredRole);
+        if (!update.success) {
+          await signOut(auth);
+          if (update.conflictRole === "admin") {
+            setError("This Google account is already registered as an admin. Please use a different account for player access.");
+          } else if (update.conflictRole === "player") {
+            setError("This Google account is already registered as a player. Please use a different account for admin access.");
+          } else {
+            setError("Unable to sign in with this account. Please try another Google account.");
+          }
+        }
       }
     } catch (err) {
       console.error("Social login error:", err);
@@ -393,13 +410,15 @@ function LoginPage({ roleIntent, onBack }) {
 }
 
 /* ─── Analytics Page ─────────────────────────────────────── */
+
+
 function AnalyticsPage({ onBack }) {
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState("");
 
   useEffect(()=>{
-    fetch("http://127.0.0.1:5000/api/analytics")
+    fetch(`${API}/analytics`)
       .then(r=>r.json())
       .then(d=>{ if(d.success) setData(d.analytics); else setError("Failed to load."); })
       .catch(()=>setError("Backend not reachable. Make sure Flask is running."))

@@ -1,8 +1,7 @@
 // src/component/superman/SupermanDashboard.jsx
 import { useState, useEffect } from "react";
 import "./SupermanDashboard.css";
-
-const API = "http://127.0.0.1:5000/api";
+import API from "../../config/api";
 
 export default function SupermanDashboard({ user, onLogout, onBack }) {
   const [analytics, setAnalytics] = useState(null);
